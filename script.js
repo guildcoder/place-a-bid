@@ -41,8 +41,8 @@ async function querySheet(sheetName, query) {
 }
 
 async function initForm() {
-  // Load Sale Lots from Website Sale Lots!A:A
-  const lots = await querySheet("Website Sale Lots", "select A where A is not null");
+  // Load Sale Lots from Lot Listings!A:A
+  const lots = await querySheet("Lot Listings", "select A where A is not null");
   const select = document.getElementById("saleLot");
   lots.forEach(r => {
     const opt = document.createElement("option");
