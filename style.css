@@ -7,31 +7,75 @@ body {
   height: 100vh;
   margin: 0;
 }
+
 .form-container {
-  background: #D3D3D3; /* light grey */
+  background: #fff;
   padding: 2rem;
   border-radius: 12px;
   width: 400px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+h2 {
+  text-align: center;
+  color: #CC0000;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: #CC0000;
+  box-shadow: 0 0 4px rgba(204,0,0,0.3);
+}
+
 button {
+  width: 100%;
   background: #CC0000; /* Raider Red */
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
+
 button:hover {
   opacity: 0.9;
 }
-.info {
-  font-size: 0.85rem;
-  color: #333;
-}
-#formMessage {
-  margin-top: 1rem;
+
+.message {
+  text-align: center;
+  margin-top: 10px;
   font-weight: 600;
 }
 
+.sale-lot-image {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.sale-lot-image img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  pointer-events: none;
+  user-select: none;
+}
