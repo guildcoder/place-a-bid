@@ -10,10 +10,12 @@ const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0n
 const SHEET_IMAGES = "https://docs.google.com/spreadsheets/d/1EaTRt0dHGiomAyBbyLAHiUj0ZlmS_Ht81RzX2mN_7KA/gviz/tq?";
 
 let lotImages = {};
+let currentBidMap = {}; // Cache current bids per lot
 
 google.charts.load('current', { packages: ['corechart'] });
 google.charts.setOnLoadCallback(initForm);
 
+// Helper to query sheets
 async function querySheet(sheetName, query) {
   return new Promise(resolve => {
     const q = new google.visualization.Query(SHEET_MAIN + "sheet=" + encodeURIComponent(sheetName) + "&tq=" + encodeURIComponent(query));
@@ -49,7 +51,7 @@ async function loadSaleLots() {
     saleLotSelect.appendChild(opt);
   });
 
-  // Load images
+  // Load images from second spreadsheet
   let dataImg = await fetch(SHEET_IMAGES + "sheet=Website%20Sale%20Lots&tq=" + encodeURIComponent("select A,B"))
     .then(res => res.text());
   let jsonImg = JSON.parse(dataImg.substr(47).slice(0,-2));
@@ -58,12 +60,33 @@ async function loadSaleLots() {
     let url = r.c[1]?.v;
     if(lot && url) lotImages[lot] = url;
   });
+
+  // Preload current bids for all lots
+  let bidData = await querySheet("Bid Board", "select A,B where B is not null");
+  bidData.forEach(row => {
+    currentBidMap[row[0]] = parseInt(row[1]);
+  });
 }
 
-document.getElementById("saleLot").addEventListener("change", async e => {
+// Update bid field dynamically when sale lot changes
+function updateBidField(lot) {
+  const bidInput = document.getElementById("bidAmount");
+  const bidPrompt = document.getElementById("bidPrompt");
+
+  const currentBid = currentBidMap[lot] || 0;
+  if (currentBid < 400) {
+    bidInput.value = 400;
+    bidPrompt.textContent = "You are placing the opening bid. Minimum starting bid is $400.";
+  } else {
+    bidInput.value = currentBid + 100;
+    bidPrompt.textContent = `Current bid: $${currentBid}. Next valid bid: $${currentBid + 100}.`;
+  }
+}
+
+document.getElementById("saleLot").addEventListener("change", e => {
   const lot = e.target.value;
 
-  // Show image
+  // Show image if available
   const imgBox = document.getElementById("saleLotImage");
   const imgTag = document.getElementById("saleLotImgTag");
   if (lot && lotImages[lot]) {
@@ -74,19 +97,7 @@ document.getElementById("saleLot").addEventListener("change", async e => {
     imgBox.style.display = "none";
   }
 
-  // Fetch current bid
-  const bidData = await querySheet("Bid Board", `select A,B where A='${lot}'`);
-  const currentBid = bidData.length ? parseInt(bidData[0][1]) : null;
-  const bidInput = document.getElementById("bidAmount");
-  const bidPrompt = document.getElementById("bidPrompt");
-
-  if (!currentBid || currentBid < 400) {
-    bidInput.value = 400;
-    bidPrompt.textContent = "You are placing the opening bid. Minimum starting bid is $400.";
-  } else {
-    bidInput.value = currentBid + 100;
-    bidPrompt.textContent = `Current bid: $${currentBid}. Next valid bid: $${currentBid + 100}.`;
-  }
+  updateBidField(lot);
 });
 
 async function handleSubmit(e) {
@@ -109,7 +120,7 @@ async function handleSubmit(e) {
     return;
   }
 
-  // Submit
+  // Submit to Google Form
   const formData = new FormData();
   formData.append(ENTRY_MAP.saleLot, saleLot);
   formData.append(ENTRY_MAP.name, name);
@@ -117,6 +128,7 @@ async function handleSubmit(e) {
   formData.append(ENTRY_MAP.bidAmount, bidAmount);
 
   fetch(GOOGLE_FORM_ACTION, { method: "POST", body: formData, mode: "no-cors" });
+
   document.getElementById("formMessage").textContent = "✅ Bid submitted successfully!";
   document.getElementById("bidForm").reset();
   document.getElementById("saleLotImage").style.display = "none";
