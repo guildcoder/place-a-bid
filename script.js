@@ -6,19 +6,26 @@ const ENTRY_MAP = {
   bidAmount: "entry.849028228"
 };
 
-const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0nQy0jTlOcnLOPma6Ys_ZWciI/edit?usp=sharing";
+// Sheets
+const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0nQy0jTlOcnLOPma6Ys_ZWciI/gviz/tq?";
 const SHEET_IMAGES = "https://docs.google.com/spreadsheets/d/1EaTRt0dHGiomAyBbyLAHiUj0ZlmS_Ht81RzX2mN_7KA/gviz/tq?";
 
 let lotImages = {};
-let currentBidMap = {}; // Cache current bids per lot
+let currentBidMap = {};
 
 google.charts.load('current', { packages: ['corechart'] });
 google.charts.setOnLoadCallback(initForm);
 
-// Helper to query sheets
+// Robust JSON parse for gviz response
+function parseGvizResponse(responseText) {
+  const start = responseText.indexOf("{");
+  const end = responseText.lastIndexOf("}");
+  return JSON.parse(responseText.substring(start, end + 1));
+}
+
 async function querySheet(sheetName, query) {
   return new Promise(resolve => {
-    const q = new google.visualization.Query(SHEET_MAIN + "sheet=" + encodeURIComponent(sheetName) + "&tq=" + encodeURIComponent(query));
+    const q = new google.visualization.Query(`${SHEET_MAIN}sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(query)}`);
     q.send(resp => {
       if (resp.isError()) {
         console.error(resp.getMessage());
@@ -42,8 +49,8 @@ async function querySheet(sheetName, query) {
 async function loadSaleLots() {
   const saleLotSelect = document.getElementById("saleLot");
 
-  // Load lots for dropdown
-  let lots = await querySheet("Website Sale Lots", "select A where A is not null");
+  // Load lots from main sheet (Lot Listings tab)
+  let lots = await querySheet("Lot Listings", "select A where A is not null");
   lots.forEach(r => {
     let opt = document.createElement("option");
     opt.value = r[0];
@@ -51,17 +58,20 @@ async function loadSaleLots() {
     saleLotSelect.appendChild(opt);
   });
 
-  // Load images from second spreadsheet
-  let dataImg = await fetch(SHEET_IMAGES + "sheet=Website%20Sale%20Lots&tq=" + encodeURIComponent("select A,B"))
+  // Load images from secondary sheet (Website Sale Lots tab)
+  let dataImg = await fetch(`${SHEET_IMAGES}sheet=Website%20Sale%20Lots&tq=select%20A,B`)
     .then(res => res.text());
-  let jsonImg = JSON.parse(dataImg.substr(47).slice(0,-2));
-  jsonImg.table.rows.forEach(r => {
-    let lot = r.c[0]?.v;
-    let url = r.c[1]?.v;
-    if(lot && url) lotImages[lot] = url;
-  });
+  let jsonImg = parseGvizResponse(dataImg);
 
-  // Preload current bids for all lots
+  if (jsonImg.table && jsonImg.table.rows) {
+    jsonImg.table.rows.forEach(r => {
+      const lot = r.c[0]?.v;
+      const url = r.c[1]?.v;
+      if (lot && url) lotImages[lot] = url;
+    });
+  }
+
+  // Preload current bids from Bid Board tab
   let bidData = await querySheet("Bid Board", "select A,B where B is not null");
   bidData.forEach(row => {
     currentBidMap[row[0]] = parseInt(row[1]);
@@ -83,6 +93,7 @@ function updateBidField(lot) {
   }
 }
 
+// Event listener for sale lot selection
 document.getElementById("saleLot").addEventListener("change", e => {
   const lot = e.target.value;
 
@@ -100,6 +111,7 @@ document.getElementById("saleLot").addEventListener("change", e => {
   updateBidField(lot);
 });
 
+// Form submission handler
 async function handleSubmit(e) {
   e.preventDefault();
   const saleLot = document.getElementById("saleLot").value;
