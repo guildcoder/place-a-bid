@@ -76,10 +76,38 @@
       max-width: 100%;
       border-radius: 8px;
       border: 1px solid #ddd;
-      pointer-events: none; /* make it non-clickable */
+      pointer-events: none;
       user-select: none;
     }
   </style>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
-  <div class="form-container"
+  <div class="form-container">
+    <h2>Place Your Bid</h2>
+    <form id="bidForm">
+      <label for="saleLot">Sale Lot</label>
+      <select id="saleLot" required></select>
+
+      <label for="name">Name</label>
+      <input type="text" id="name" required>
+
+      <label for="biddingNumber">Bidding Number</label>
+      <input type="text" id="biddingNumber" required>
+
+      <label for="bidAmount">Bid Amount</label>
+      <input type="number" id="bidAmount" required>
+      <p id="bidPrompt" class="message"></p>
+
+      <button type="submit">Submit Bid</button>
+      <div class="message" id="formMessage"></div>
+    </form>
+
+    <div class="sale-lot-image" id="saleLotImage">
+      <img id="saleLotImgTag" src="" alt="Sale Lot Image">
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
