@@ -1,135 +1,36 @@
-const GOOGLE_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLSeyHGovAvqCszajtXfqdgOGNya0qTfxzhNTxMnsr5b03x6tJA/formResponse";
-const ENTRY_MAP = {
-  saleLot: "entry.1393425854",
-  name: "entry.2014194198",
-  biddingNumber: "entry.938652901",
-  bidAmount: "entry.849028228"
-};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bidding Form</title>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 
-// Sheets (must be publicly viewable)
-const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0nQy0jTlOcnLOPma6Ys_ZWciI/gviz/tq?";
-const SHEET_IMAGES = "https://docs.google.com/spreadsheets/d/1EaTRt0dHGiomAyBbyLAHiUj0ZlmS_Ht81RzX2mN_7KA/gviz/tq?";
+  <!-- Google Charts Loader (Visualization API) -->
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Place Your Bid</h2>
+    <form id="bidForm">
+      <label for="saleLot">Sale Lot</label>
+      <select id="saleLot" required></select>
 
-let lotImages = {};
-let currentBidMap = {};
+      <label for="name">Your Name</label>
+      <input type="text" id="name" required>
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadSaleLots();
-  populateSaleLotDropdown();
+      <label for="biddingNumber">Bidding Number</label>
+      <input type="number" id="biddingNumber" required>
 
-  document.getElementById("saleLot").addEventListener("change", onLotChange);
-  document.getElementById("bidForm").addEventListener("submit", handleSubmit);
-});
+      <label for="bidAmount">Bid Amount</label>
+      <input type="number" id="bidAmount" min="400" step="100" required>
+      <p id="bidPrompt" class="info"></p>
 
-// Helper to fetch Google Sheet as JSON
-async function fetchSheet(sheetUrl, sheetName, columns="A,B") {
-  const query = `select ${columns}`;
-  const url = `${sheetUrl}sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(query)}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const jsonText = text.match(/(?<=\{).*(?=\};$)/s); // extract JSON
-  if (!jsonText) return [];
-  const data = JSON.parse(`{${jsonText[0]}}`);
-  if (!data.table || !data.table.rows) return [];
-  return data.table.rows.map(r => r.c.map(cell => cell ? cell.v : ""));
-}
+      <button type="submit">Submit Bid</button>
+    </form>
+    <p id="formMessage"></p>
+  </div>
 
-// Load all data
-async function loadSaleLots() {
-  // Load images
-  const imgRows = await fetchSheet(SHEET_IMAGES, "Website Sale Lots");
-  imgRows.forEach(r => {
-    if (r[0] && r[1]) lotImages[r[0]] = r[1];
-  });
-
-  // Load current bids
-  const bidRows = await fetchSheet(SHEET_MAIN, "Bid Board", "A,B");
-  bidRows.forEach(r => {
-    if (r[0] && r[1]) currentBidMap[r[0]] = parseInt(r[1]);
-  });
-
-  // Load sale lots
-  const lotRows = await fetchSheet(SHEET_MAIN, "Lot Listings", "A");
-  lotRows.shift(); // remove header
-  window.saleLotsData = lotRows.map(r => r[0]);
-}
-
-// Populate sale lot dropdown
-function populateSaleLotDropdown() {
-  const select = document.getElementById("saleLot");
-  window.saleLotsData.forEach(lot => {
-    const option = document.createElement("option");
-    option.value = lot;
-    option.textContent = lot;
-    select.appendChild(option);
-  });
-}
-
-// Handle sale lot selection change
-function onLotChange(e) {
-  const lot = e.target.value;
-  const imgBox = document.getElementById("saleLotImage");
-  const imgTag = document.getElementById("saleLotImgTag");
-
-  if (lot && lotImages[lot]) {
-    imgTag.src = lotImages[lot];
-    imgBox.style.display = "block";
-  } else {
-    imgTag.src = "";
-    imgBox.style.display = "none";
-  }
-
-  updateBidField(lot);
-}
-
-// Update bid input
-function updateBidField(lot) {
-  const bidInput = document.getElementById("bidAmount");
-  const bidPrompt = document.getElementById("bidPrompt");
-
-  const currentBid = currentBidMap[lot] || 0;
-  if (currentBid < 400) {
-    bidInput.value = 400;
-    bidPrompt.textContent = "You are placing the opening bid. Minimum starting bid is $400.";
-  } else {
-    bidInput.value = currentBid + 100;
-    bidPrompt.textContent = `Current bid: $${currentBid}. Next valid bid: $${currentBid + 100}.`;
-  }
-}
-
-// Handle form submission
-async function handleSubmit(e) {
-  e.preventDefault();
-
-  const saleLot = document.getElementById("saleLot").value;
-  const name = document.getElementById("name").value.trim();
-  const biddingNumber = document.getElementById("biddingNumber").value.trim();
-  const bidAmount = parseInt(document.getElementById("bidAmount").value);
-
-  // Validate name & bidding number
-  const bidders = await fetchSheet(SHEET_MAIN, "Bidding Number", "A,D");
-  const matched = bidders.find(r => r[0] === name && r[1] === biddingNumber);
-  if (!matched) {
-    document.getElementById("formMessage").textContent = "❌ Name and Bidding Number do not match.";
-    return;
-  }
-
-  // Validate bid
-  if (bidAmount < 400 || bidAmount % 100 !== 0) {
-    document.getElementById("formMessage").textContent = "❌ Bid must be $400 minimum and in $100 increments.";
-    return;
-  }
-
-  // Submit to Google Form
-  const formData = new FormData();
-  formData.append(ENTRY_MAP.saleLot, saleLot);
-  formData.append(ENTRY_MAP.name, name);
-  formData.append(ENTRY_MAP.biddingNumber, biddingNumber);
-  formData.append(ENTRY_MAP.bidAmount, bidAmount);
-
-  fetch(GOOGLE_FORM_ACTION, { method: "POST", body: formData, mode: "no-cors" });
-
-  document.getElementById("formMessage").textContent = "✅ Bid submitted successfully!";
-  document.getElementById("bidForm").reset();
-  document.getElementById("saleLotImage").style.display = "none";
-}
+  <script src="script.js"></script>
+</body>
+</html>
