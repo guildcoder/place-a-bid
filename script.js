@@ -6,7 +6,7 @@ const ENTRY_MAP = {
   bidAmount: "entry.849028228"
 };
 
-const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0nQy0jTlOcnLOPma6Ys_ZWciI/gviz/tq?";
+const SHEET_MAIN = "https://docs.google.com/spreadsheets/d/1tvE1IDZKQLje2K64Et0nQy0jTlOcnLOPma6Ys_ZWciI/edit?usp=sharing";
 const SHEET_IMAGES = "https://docs.google.com/spreadsheets/d/1EaTRt0dHGiomAyBbyLAHiUj0ZlmS_Ht81RzX2mN_7KA/gviz/tq?";
 
 let lotImages = {};
