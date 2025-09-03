@@ -1,0 +1,31 @@
+body {
+  font-family: 'Josefin Sans', sans-serif;
+  background-color: #F8F8F6; /* cotton dusty white */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.form-container {
+  background: #D3D3D3; /* light grey */
+  padding: 2rem;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+button {
+  background: #CC0000; /* Raider Red */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+button:hover {
+  opacity: 0.9;
+}
+.info {
+  font-size: 0.85rem;
+  color: #333;
+}
