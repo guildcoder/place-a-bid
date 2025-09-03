@@ -5,6 +5,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  margin: 0;
 }
 .form-container {
   background: #D3D3D3; /* light grey */
@@ -29,3 +30,8 @@ button:hover {
   font-size: 0.85rem;
   color: #333;
 }
+#formMessage {
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
